@@ -46,20 +46,12 @@
         }
         .slide-in-up { animation: slideInUp 0.5s ease-out forwards; }
 
-        /* Custom scrollbar for product list if it overflows */
-        .product-list::-webkit-scrollbar {
-            width: 8px;
-        }
-        .product-list::-webkit-scrollbar-track {
-            background: #f0fdf4; /* Light green pastel */
-        }
-        .product-list::-webkit-scrollbar-thumb {
-            background: #a7f3d0; /* Mint */
-            border-radius: 4px;
-        }
-        .product-list::-webkit-scrollbar-thumb:hover {
-            background: #6ee7b7; /* Brighter Mint */
-        }
+        /* No custom scrollbar CSS needed if removing overflow properties */
+        /* .product-list::-webkit-scrollbar { ... } */ 
+        /* .product-list::-webkit-scrollbar-track { ... } */
+        /* .product-list::-webkit-scrollbar-thumb { ... } */
+        /* .product-list::-webkit-scrollbar-thumb:hover { ... } */
+
         .table-cell-ellipsis {
             max-width: 100px; /* Adjust as needed for product name */
             white-space: nowrap;
@@ -112,7 +104,8 @@
                 <h2 class="text-2xl font-semibold text-green-600 mb-4">🛒 เลือกสินค้าที่ต้องการ</h2>
                 <div id="productsLoader" class="loader"></div>
                 <div id="productsError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
-                <div class="overflow-x-auto product-list max-h-[60vh]">
+                <!-- Removed overflow-x-auto and max-h-[60vh] from this div -->
+                <div class="product-list"> 
                     <table id="productsTable" class="min-w-full divide-y divide-gray-200 hidden">
                         <thead class="pastel-primary">
                             <tr>
@@ -140,11 +133,12 @@
                 <h2 class="text-2xl font-semibold text-amber-600 mb-4">📋 คำสั่งซื้อที่สั่งเข้ามา</h2>
                 <div id="ordersLoader" class="loader"></div>
                 <div id="ordersError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
-                <div class="overflow-x-auto product-list max-h-[50vh]">
+                <!-- Removed overflow-x-auto and max-h-[50vh] from this div -->
+                <div class="product-list"> 
                     <table id="ordersTable" class="min-w-full divide-y divide-gray-200 hidden">
                         <thead class="pastel-secondary">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">Timestamp 🕒</th>
+                                <!-- Removed Timestamp column -->
                                 <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อผู้สั่ง 🧑‍🌾</th>
                                 <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อสินค้า 📜</th>
                                 <th class="px-4 py-3 text-center text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">จำนวน 🔢</th>
@@ -156,7 +150,14 @@
                         </tbody>
                     </table>
                 </div>
-                   <div class="mt-4 text-center">
+                <!-- Order Summary Section -->
+                <div id="ordersSummary" class="mt-6 p-4 bg-yellow-50 rounded-lg shadow-inner hidden">
+                    <h3 class="text-xl font-semibold text-amber-700 mb-3">สรุปยอดรวมตามผู้สั่ง 📊</h3>
+                    <div id="summaryContent" class="space-y-2">
+                        <!-- Summary items will be inserted here by JavaScript -->
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
                     <button id="refreshOrdersBtn" class="text-sm text-blue-600 hover:text-blue-800 underline">รีเฟรชรายการคำสั่งซื้อ 🔄</button>
                 </div>
             </section>
@@ -206,10 +207,12 @@
         const ordersTableBody = document.getElementById('ordersTableBody');
         const productsLoader = document.getElementById('productsLoader');
         const ordersLoader = document.getElementById('ordersLoader');
-        const productsErrorEl = document.getElementById('productsError'); // Renamed for clarity
-        const ordersErrorEl = document.getElementById('ordersError');   // Renamed for clarity
+        const productsErrorEl = document.getElementById('productsError'); 
+        const ordersErrorEl = document.getElementById('ordersError');   
         const productsTable = document.getElementById('productsTable');
         const ordersTable = document.getElementById('ordersTable');
+        const ordersSummary = document.getElementById('ordersSummary'); // New element for summary
+        const summaryContent = document.getElementById('summaryContent'); // New element for summary content
 
         const ordererNameInput = document.getElementById('ordererName');
         const placeOrderBtn = document.getElementById('placeOrderBtn');
@@ -239,6 +242,12 @@
             hideNotification();
         });
 
+        /**
+         * Displays a notification message.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'success', 'error', or 'info'.
+         * @param {number} duration - How long to show the notification in milliseconds (0 for indefinite).
+         */
         function showNotification(message, type = 'info', duration = 4000) {
             clearTimeout(notificationTimeout);
             notificationMessage.textContent = message;
@@ -270,6 +279,9 @@
             }
         }
 
+        /**
+         * Hides the notification message.
+         */
         function hideNotification() {
             clearTimeout(notificationTimeout);
             notificationModal.classList.add('opacity-0');
@@ -285,16 +297,32 @@
         }
 
         // --- Helper Functions ---
+        /**
+         * Shows a loader and hides related table/error elements.
+         * @param {HTMLElement} loaderElement - The loader element to show.
+         * @param {HTMLElement} tableElement - The table element to hide.
+         * @param {HTMLElement} errorElement - The error element to hide.
+         */
         function showLoader(loaderElement, tableElement, errorElement) {
             if(loaderElement) loaderElement.style.display = 'block';
             if(tableElement) tableElement.classList.add('hidden');
             if(errorElement) errorElement.classList.add('hidden');
         }
 
+        /**
+         * Hides a loader element.
+         * @param {HTMLElement} loaderElement - The loader element to hide.
+         */
         function hideLoader(loaderElement) {
             if(loaderElement) loaderElement.style.display = 'none';
         }
         
+        /**
+         * Displays an error message and hides the related table.
+         * @param {HTMLElement} errorElement - The error element to show.
+         * @param {string} message - The error message.
+         * @param {HTMLElement} tableElement - The table element to hide.
+         */
         function showError(errorElement, message, tableElement) {
             if(errorElement) {
                 errorElement.textContent = message;
@@ -303,23 +331,40 @@
             if(tableElement) tableElement.classList.add('hidden');
         }
 
+        /**
+         * Hides an error element.
+         * @param {HTMLElement} errorElement - The error element to hide.
+         */
         function hideError(errorElement) {
              if(errorElement) errorElement.classList.add('hidden');
         }
 
+        /**
+         * Formats a number to a fixed 2 decimal places.
+         * @param {number|string} price - The price to format.
+         * @returns {string} Formatted price string.
+         */
         function formatPrice(price) {
             const num = parseFloat(price);
             return isNaN(num) ? '0.00' : num.toFixed(2);
         }
         
+        /**
+         * Sanitizes HTML string to prevent XSS attacks.
+         * @param {string} str - The string to sanitize.
+         * @returns {string} Sanitized string.
+         */
         function sanitizeHTML(str) {
-            if (typeof str !== 'string') str = String(str); // Ensure str is a string
+            if (typeof str !== 'string') str = String(str); 
             const temp = document.createElement('div');
             temp.textContent = str;
             return temp.innerHTML;
         }
 
         // --- Fetch Products ---
+        /**
+         * Fetches product data from Google Apps Script.
+         */
         async function fetchProducts() {
             showLoader(productsLoader, productsTable, productsErrorEl);
             try {
@@ -338,13 +383,17 @@
                 if (productsTable) productsTable.classList.remove('hidden');
 
             } catch (error) {
-                console.error('Error fetching products:', error); // This will log the error object itself
+                console.error('Error fetching products:', error); 
                 showError(productsErrorEl, `เกิดข้อผิดพลาดในการโหลดสินค้า: ${error.message} 😭`, productsTable);
             } finally {
                 hideLoader(productsLoader);
             }
         }
 
+        /**
+         * Renders product data into the products table.
+         * @param {Array<Object>} products - Array of product objects.
+         */
         function renderProducts(products) {
             productsTableBody.innerHTML = ''; // Clear existing rows
             if (!products || products.length === 0) {
@@ -355,18 +404,15 @@
             products.forEach((product, index) => {
                 const name = product['ชื่อสินค้า'] || 'N/A';
                 const price = parseFloat(product['ราคา']);
-                // This is where the 'imageUrl' from GAS is used.
-                // The GAS script should provide a direct link to the image file (e.g., from Google Drive).
                 const imageUrl = product['imageUrl'] || `https://placehold.co/100x100/a7f3d0/333333?text=${encodeURIComponent('ไม่มีรูป')}`;
                 const unit = product['หน่วย'] || 'ชุด';
 
-                if (isNaN(price) || price < 0) { // Allow 0 price if intended
+                if (isNaN(price) || price < 0) { 
                     console.warn('Invalid or zero price for product:', product);
                 }
 
                 const row = productsTableBody.insertRow();
                 row.classList.add('hover:bg-green-50', 'transition-colors', 'duration-150');
-                // The <img> tag displays the image from the imageUrl
                 row.insertCell().innerHTML = `<img src="${sanitizeHTML(imageUrl)}" alt="${sanitizeHTML(name)}" class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg shadow-sm m-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/fecaca/991b1b?text=${encodeURIComponent('รูปเสีย')}';">`;
                 
                 const nameCell = row.insertCell();
@@ -399,6 +445,10 @@
             });
         }
 
+        /**
+         * Updates the total price for a single item in the product table.
+         * @param {Event} event - The change event from the quantity select element.
+         */
         function updateTotalItemPrice(event) {
             const selectElement = event.target;
             const quantity = parseInt(selectElement.value);
@@ -408,6 +458,9 @@
         }
 
         // --- Fetch Order History ---
+        /**
+         * Fetches order history from Google Apps Script.
+         */
         async function fetchOrders() {
             showLoader(ordersLoader, ordersTable, ordersErrorEl);
             try {
@@ -423,43 +476,68 @@
                 renderOrders(result.data);
                 hideError(ordersErrorEl);
                 if(ordersTable) ordersTable.classList.remove('hidden');
+                if(ordersSummary) ordersSummary.classList.remove('hidden'); // Show summary section
 
             } catch (error) {
                 console.error('Error fetching orders:', error);
-                showError(ordersErrorEl, `เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ: ${error.message} 😥`, ordersTable);
+                showError(ordersErrorEl, `เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ: ${error.message} �`, ordersTable);
+                if(ordersSummary) ordersSummary.classList.add('hidden'); // Hide summary on error
             } finally {
                 hideLoader(ordersLoader);
             }
         }
 
+        /**
+         * Renders order history into the orders table and calculates summary.
+         * @param {Array<Object>} orders - Array of order objects.
+         */
         function renderOrders(orders) {
             ordersTableBody.innerHTML = ''; // Clear existing rows
+            summaryContent.innerHTML = ''; // Clear existing summary content
+            ordersSummary.classList.add('hidden'); // Hide summary until data is available
+
             if (!orders || orders.length === 0) {
-                ordersTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">📝 ยังไม่มีคำสั่งซื้อเข้ามา</td></tr>';
+                ordersTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">📝 ยังไม่มีคำสั่งซื้อเข้ามา</td></tr>'; // colspan reduced by 1
                 return;
             }
+
+            const ordererTotals = {}; // Object to store total amounts per orderer
 
             orders.forEach(order => {
                 const row = ordersTableBody.insertRow();
                 row.classList.add('hover:bg-yellow-50', 'transition-colors', 'duration-150');
-                const timestamp = order['Timestamp'] ? new Date(order['Timestamp']).toLocaleString('th-TH', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : 'N/A';
-                row.insertCell().textContent = sanitizeHTML(timestamp);
-                row.cells[0].className = 'px-4 py-3 text-xs text-gray-600';
-
+                
+                // No Timestamp column
                 row.insertCell().textContent = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
-                row.cells[1].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
-                row.cells[1].title = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
+                row.cells[0].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
+                row.cells[0].title = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
 
                 row.insertCell().textContent = sanitizeHTML(order['ชื่อสินค้า'] || 'N/A');
-                row.cells[2].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
-                row.cells[2].title = sanitizeHTML(order['ชื่อสินค้า'] || 'N/A');
+                row.cells[1].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
+                row.cells[1].title = sanitizeHTML(order['ชื่อสินค้า'] || 'N/A');
 
                 row.insertCell().textContent = sanitizeHTML(order['จำนวนที่สั่ง'] || '0');
-                row.cells[3].className = 'px-4 py-3 text-sm text-gray-700 text-center';
+                row.cells[2].className = 'px-4 py-3 text-sm text-gray-700 text-center';
 
-                row.insertCell().textContent = formatPrice(order['รวมราคา'] || 0);
-                row.cells[4].className = 'px-4 py-3 text-sm text-gray-800 font-semibold';
+                const currentOrderPrice = parseFloat(order['รวมราคา'] || 0);
+                row.insertCell().textContent = formatPrice(currentOrderPrice);
+                row.cells[3].className = 'px-4 py-3 text-sm text-gray-800 font-semibold';
+
+                // Aggregate totals for summary
+                const ordererName = order['ชื่อผู้สั่ง'] || 'Unknown';
+                ordererTotals[ordererName] = (ordererTotals[ordererName] || 0) + currentOrderPrice;
             });
+
+            // Render Summary
+            if (Object.keys(ordererTotals).length > 0) {
+                for (const name in ordererTotals) {
+                    const summaryItem = document.createElement('div');
+                    summaryItem.className = 'flex justify-between items-center text-base';
+                    summaryItem.innerHTML = `<span><strong>${sanitizeHTML(name)}</strong></span><span class="font-bold text-green-700">${formatPrice(ordererTotals[name])} บาท</span>`;
+                    summaryContent.appendChild(summaryItem);
+                }
+                ordersSummary.classList.remove('hidden'); // Show the summary section
+            }
         }
 
         // --- Order Placement Logic ---
@@ -521,7 +599,8 @@
             modal.classList.add('opacity-0', 'pointer-events-none');
             modal.classList.remove('opacity-100');
             modal.querySelector('div > div').classList.add('scale-95');
-            modal.querySelector('div > div').classList.add('scale-100'); // Fixed: Should remove scale-100, add scale-95
+            // Fixed: This line was causing an issue. When closing, we want it to scale down.
+            // modal.querySelector('div > div').classList.add('scale-100'); 
         });
 
         editOrderBtn.addEventListener('click', () => {
@@ -614,3 +693,4 @@
     </script>
 </body>
 </html>
+�
