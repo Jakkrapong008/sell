@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบซื้ออาหาร ผักและผลไม้</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0fdf4; /* Light green pastel */
+        }
+        .pastel-primary { background-color: #a7f3d0; } /* Mint */
+        .pastel-secondary { background-color: #fef3c7; } /* Pale Yellow */
+        .pastel-accent { background-color: #fbcfe8; } /* Pink */
+        .btn-primary {
+            background-color: #34d399; /* Emerald */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover { background-color: #10b981; }
+        .btn-secondary {
+            background-color: #fbbf24; /* Amber */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover { background-color: #f59e0b; }
+        .btn-danger {
+            background-color: #f87171; /* Red */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-danger:hover { background-color: #ef4444; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in-up { animation: slideInUp 0.5s ease-out forwards; }
+
+        /* Custom scrollbar for product list if it overflows */
+        .product-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .product-list::-webkit-scrollbar-track {
+            background: #f0fdf4; /* Light green pastel */
+        }
+        .product-list::-webkit-scrollbar-thumb {
+            background: #a7f3d0; /* Mint */
+            border-radius: 4px;
+        }
+        .product-list::-webkit-scrollbar-thumb:hover {
+            background: #6ee7b7; /* Brighter Mint */
+        }
+        .table-cell-ellipsis {
+            max-width: 100px; /* Adjust as needed for product name */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+          /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #34d399;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Modal styles */
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .modal-active {
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        /* Notification Styles */
+        #notificationModal {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 md:p-8">
+    <div class="container mx-auto max-w-4xl">
+        <header class="text-center mb-8 slide-in-up">
+            <h1 class="text-4xl sm:text-5xl font-bold text-green-700">🛍️ ระบบซื้ออาหาร ผักและผลไม้ 🥕🍓</h1>
+        </header>
+
+        <main>
+            <!-- Orderer Name Input -->
+            <section id="orderer-section" class="mb-6 p-6 bg-white rounded-xl shadow-lg fade-in" style="animation-delay: 0.2s;">
+                <label for="ordererName" class="block text-lg font-semibold text-gray-700 mb-2">ชื่อผู้สั่ง 🧑‍🌾:</label>
+                <input type="text" id="ordererName" name="ordererName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-150" placeholder="เช่น สมชาย ใจดี">
+            </section>
+
+            <!-- Products Table -->
+            <section id="products-section" class="mb-8 p-6 bg-white rounded-xl shadow-lg fade-in" style="animation-delay: 0.4s;">
+                <h2 class="text-2xl font-semibold text-green-600 mb-4">🛒 เลือกสินค้าที่ต้องการ</h2>
+                <div id="productsLoader" class="loader"></div>
+                <div id="productsError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
+                <div class="overflow-x-auto product-list max-h-[60vh]">
+                    <table id="productsTable" class="min-w-full divide-y divide-gray-200 hidden">
+                        <thead class="pastel-primary">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-green-700 uppercase tracking-wider">ภาพ 🖼️</th>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-green-700 uppercase tracking-wider">ชื่อสินค้า 📜</th>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-green-700 uppercase tracking-wider">ราคา (บาท) 💰</th>
+                                <th class="px-4 py-3 text-center text-xs sm:text-sm font-medium text-green-700 uppercase tracking-wider">จำนวน (ชุด) 🔢</th>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-green-700 uppercase tracking-wider">รวม (บาท) 💸</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Product rows will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-6 text-right">
+                    <button id="placeOrderBtn" class="btn-primary font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition duration-300">
+                        ดำเนินการสั่งซื้อ <span class="ml-1">➡️</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Order History -->
+            <section id="order-history-section" class="p-6 bg-white rounded-xl shadow-lg fade-in" style="animation-delay: 0.6s;">
+                <h2 class="text-2xl font-semibold text-amber-600 mb-4">📋 คำสั่งซื้อที่สั่งเข้ามา</h2>
+                <div id="ordersLoader" class="loader"></div>
+                <div id="ordersError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
+                <div class="overflow-x-auto product-list max-h-[50vh]">
+                    <table id="ordersTable" class="min-w-full divide-y divide-gray-200 hidden">
+                        <thead class="pastel-secondary">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">Timestamp 🕒</th>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อผู้สั่ง 🧑‍🌾</th>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อสินค้า 📜</th>
+                                <th class="px-4 py-3 text-center text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">จำนวน 🔢</th>
+                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">รวมราคา 💸</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Order history rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                   <div class="mt-4 text-center">
+                    <button id="refreshOrdersBtn" class="text-sm text-blue-600 hover:text-blue-800 underline">รีเฟรชรายการคำสั่งซื้อ 🔄</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Order Summary Modal -->
+        <div id="orderSummaryModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 opacity-0 pointer-events-none">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 sm:p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-semibold text-green-700">📝 สรุปรายการสั่งซื้อ</h3>
+                    <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <div id="modalOrdererName" class="mb-4 text-lg"><strong>ชื่อผู้สั่ง:</strong> <span class="font-normal"></span></div>
+                <div id="modalOrderSummary" class="mb-6 max-h-60 overflow-y-auto">
+                    <!-- Summary items will be here -->
+                </div>
+                <div id="modalGrandTotal" class="text-xl font-bold text-right mb-8">ยอดรวมสุทธิ: <span class="text-green-600"></span> บาท</div>
+                <div id="modalError" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+                    <button id="editOrderBtn" class="btn-secondary font-semibold py-2 px-5 rounded-lg w-full sm:w-auto">✏️ แก้ไขข้อมูล</button>
+                    <button id="confirmOrderBtn" class="btn-primary font-semibold py-2 px-5 rounded-lg w-full sm:w-auto">✔️ ยืนยันการสั่งซื้อ</button>
+                </div>
+                <div id="confirmOrderLoader" class="loader hidden mt-4"></div>
+            </div>
+        </div>
+        
+        <!-- Simple Notification Modal -->
+        <div id="notificationModal" class="fixed top-4 right-4 z-[100] p-4 rounded-lg shadow-lg text-white opacity-0 pointer-events-none transition-all duration-500 max-w-xs sm:max-w-sm hidden" style="transform: translateX(100%);">
+            <div class="flex items-center">
+                <span id="notificationMessage" class="flex-grow"></span>
+                <button id="closeNotificationBtn" class="ml-3 text-xl leading-none font-bold hover:text-gray-200">&times;</button>
+            </div>
+        </div>
+
+        <footer class="text-center mt-12 py-4 text-sm text-gray-500 border-t border-gray-200">
+            <p>&copy; <span id="currentYear"></span> ระบบร้านผักผลไม้สดใส. ขับเคลื่อนด้วยความสดใหม่! 💚</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Note: The GAS_URL needs to be updated with your deployed Google Apps Script URL.
+        // For testing purposes, you can use a placeholder, but it will not fetch real data.
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxO-HudmmNyJ58RKhay9oddjboJtrWHSM39Hrj4RL_1fFbZVNowqwP7_c7teiLuiS_/exec'; // REPLACE THIS WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT URL
+        
+        const productsTableBody = document.getElementById('productsTableBody');
+        const ordersTableBody = document.getElementById('ordersTableBody');
+        const productsLoader = document.getElementById('productsLoader');
+        const ordersLoader = document.getElementById('ordersLoader');
+        const productsErrorEl = document.getElementById('productsError'); // Renamed for clarity
+        const ordersErrorEl = document.getElementById('ordersError');   // Renamed for clarity
+        const productsTable = document.getElementById('productsTable');
+        const ordersTable = document.getElementById('ordersTable');
+
+        const ordererNameInput = document.getElementById('ordererName');
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+        const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
+
+        const modal = document.getElementById('orderSummaryModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const editOrderBtn = document.getElementById('editOrderBtn');
+        const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+        const modalOrdererName = document.getElementById('modalOrdererName').querySelector('span');
+        const modalOrderSummary = document.getElementById('modalOrderSummary');
+        const modalGrandTotal = document.getElementById('modalGrandTotal').querySelector('span');
+        const modalError = document.getElementById('modalError');
+        const confirmOrderLoader = document.getElementById('confirmOrderLoader');
+        
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        let productsData = []; // To store fetched products
+
+        // --- Notification System ---
+        const notificationModal = document.getElementById('notificationModal');
+        const notificationMessage = document.getElementById('notificationMessage');
+        const closeNotificationBtn = document.getElementById('closeNotificationBtn');
+        let notificationTimeout;
+
+        closeNotificationBtn.addEventListener('click', () => {
+            hideNotification();
+        });
+
+        function showNotification(message, type = 'info', duration = 4000) {
+            clearTimeout(notificationTimeout);
+            notificationMessage.textContent = message;
+            
+            // Remove all type classes and hidden, opacity-0, pointer-events-none before adding new ones
+            notificationModal.classList.remove('bg-blue-600', 'bg-green-600', 'bg-red-600', 'hidden', 'opacity-0', 'pointer-events-none');
+            notificationModal.style.transform = 'translateX(100%)'; // Reset for animation
+
+            if (type === 'success') {
+                notificationModal.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                notificationModal.classList.add('bg-red-600');
+            } else { // info
+                notificationModal.classList.add('bg-blue-600');
+            }
+
+            notificationModal.classList.remove('hidden');
+            // Force reflow for animation
+            void notificationModal.offsetWidth; 
+
+            requestAnimationFrame(() => {
+                notificationModal.classList.add('opacity-100');
+                notificationModal.style.transform = 'translateX(0)';
+                notificationModal.classList.remove('pointer-events-none');
+            });
+            
+            if (duration > 0) {
+                notificationTimeout = setTimeout(hideNotification, duration);
+            }
+        }
+
+        function hideNotification() {
+            clearTimeout(notificationTimeout);
+            notificationModal.classList.add('opacity-0');
+            notificationModal.style.transform = 'translateX(100%)';
+            notificationModal.classList.add('pointer-events-none');
+            
+            setTimeout(() => {
+                // Check if still opacity-0 before hiding, to prevent race conditions if shown again quickly
+                if (notificationModal.classList.contains('opacity-0')) {
+                    notificationModal.classList.add('hidden');
+                }
+            }, 500); // Match transition duration
+        }
+
+        // --- Helper Functions ---
+        function showLoader(loaderElement, tableElement, errorElement) {
+            if(loaderElement) loaderElement.style.display = 'block';
+            if(tableElement) tableElement.classList.add('hidden');
+            if(errorElement) errorElement.classList.add('hidden');
+        }
+
+        function hideLoader(loaderElement) {
+            if(loaderElement) loaderElement.style.display = 'none';
+        }
+        
+        function showError(errorElement, message, tableElement) {
+            if(errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+            }
+            if(tableElement) tableElement.classList.add('hidden');
+        }
+
+        function hideError(errorElement) {
+             if(errorElement) errorElement.classList.add('hidden');
+        }
+
+        function formatPrice(price) {
+            const num = parseFloat(price);
+            return isNaN(num) ? '0.00' : num.toFixed(2);
+        }
+        
+        function sanitizeHTML(str) {
+            if (typeof str !== 'string') str = String(str); // Ensure str is a string
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        }
+
+        // --- Fetch Products ---
+        async function fetchProducts() {
+            showLoader(productsLoader, productsTable, productsErrorEl);
+            try {
+                const response = await fetch(`${GAS_URL}?action=getProducts`);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText} (Status: ${response.status})`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error("GAS fetchProducts failed. Response from GAS:", result);
+                    throw new Error(result.message || 'Failed to fetch products from GAS (Original message from GAS was empty or not provided).');
+                }
+                
+                productsData = result.data;
+                renderProducts(productsData);
+                hideError(productsErrorEl);
+                if (productsTable) productsTable.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error fetching products:', error); // This will log the error object itself
+                showError(productsErrorEl, `เกิดข้อผิดพลาดในการโหลดสินค้า: ${error.message} 😭`, productsTable);
+            } finally {
+                hideLoader(productsLoader);
+            }
+        }
+
+        function renderProducts(products) {
+            productsTableBody.innerHTML = ''; // Clear existing rows
+            if (!products || products.length === 0) {
+                productsTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">🥺 ไม่พบสินค้าในระบบขณะนี้</td></tr>';
+                return;
+            }
+
+            products.forEach((product, index) => {
+                const name = product['ชื่อสินค้า'] || 'N/A';
+                const price = parseFloat(product['ราคา']);
+                // This is where the 'imageUrl' from GAS is used.
+                // The GAS script should provide a direct link to the image file (e.g., from Google Drive).
+                const imageUrl = product['imageUrl'] || `https://placehold.co/100x100/a7f3d0/333333?text=${encodeURIComponent('ไม่มีรูป')}`;
+                const unit = product['หน่วย'] || 'ชุด';
+
+                if (isNaN(price) || price < 0) { // Allow 0 price if intended
+                    console.warn('Invalid or zero price for product:', product);
+                }
+
+                const row = productsTableBody.insertRow();
+                row.classList.add('hover:bg-green-50', 'transition-colors', 'duration-150');
+                // The <img> tag displays the image from the imageUrl
+                row.insertCell().innerHTML = `<img src="${sanitizeHTML(imageUrl)}" alt="${sanitizeHTML(name)}" class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg shadow-sm m-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/fecaca/991b1b?text=${encodeURIComponent('รูปเสีย')}';">`;
+                
+                const nameCell = row.insertCell();
+                nameCell.className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
+                nameCell.title = sanitizeHTML(name); 
+                nameCell.innerHTML = `${sanitizeHTML(name)} <span class="text-xs text-gray-500">(${sanitizeHTML(unit)})</span>`;
+
+                row.insertCell().className = 'px-4 py-3 text-sm text-gray-700 text-right sm:text-left';
+                row.cells[2].textContent = formatPrice(price);
+
+                const quantityCell = row.insertCell();
+                quantityCell.className = 'px-4 py-3 text-sm text-gray-700 text-center';
+                const quantitySelect = document.createElement('select');
+                quantitySelect.className = 'p-2 border border-gray-300 rounded-md w-20 text-center focus:ring-1 focus:ring-green-500';
+                quantitySelect.dataset.productId = product['ID_สินค้า'] || index; 
+                quantitySelect.dataset.productName = name;
+                quantitySelect.dataset.productPrice = price;
+                for (let i = 0; i <= 10; i++) { 
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.text = i;
+                    quantitySelect.add(option);
+                }
+                quantitySelect.addEventListener('change', updateTotalItemPrice);
+                quantityCell.appendChild(quantitySelect);
+
+                const totalItemPriceCell = row.insertCell();
+                totalItemPriceCell.className = 'px-4 py-3 text-sm text-gray-800 font-semibold text-right sm:text-left total-item-price';
+                totalItemPriceCell.textContent = '0.00';
+            });
+        }
+
+        function updateTotalItemPrice(event) {
+            const selectElement = event.target;
+            const quantity = parseInt(selectElement.value);
+            const price = parseFloat(selectElement.dataset.productPrice);
+            const totalCell = selectElement.closest('tr').querySelector('.total-item-price');
+            totalCell.textContent = formatPrice(quantity * price);
+        }
+
+        // --- Fetch Order History ---
+        async function fetchOrders() {
+            showLoader(ordersLoader, ordersTable, ordersErrorEl);
+            try {
+                const response = await fetch(`${GAS_URL}?action=getOrders`);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText} (Status: ${response.status})`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    console.error("GAS fetchOrders failed. Response from GAS:", result);
+                    throw new Error(result.message || 'Failed to fetch orders from GAS (Original message from GAS was empty or not provided).');
+                }
+                
+                renderOrders(result.data);
+                hideError(ordersErrorEl);
+                if(ordersTable) ordersTable.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+                showError(ordersErrorEl, `เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ: ${error.message} 😥`, ordersTable);
+            } finally {
+                hideLoader(ordersLoader);
+            }
+        }
+
+        function renderOrders(orders) {
+            ordersTableBody.innerHTML = ''; // Clear existing rows
+            if (!orders || orders.length === 0) {
+                ordersTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">📝 ยังไม่มีคำสั่งซื้อเข้ามา</td></tr>';
+                return;
+            }
+
+            orders.forEach(order => {
+                const row = ordersTableBody.insertRow();
+                row.classList.add('hover:bg-yellow-50', 'transition-colors', 'duration-150');
+                const timestamp = order['Timestamp'] ? new Date(order['Timestamp']).toLocaleString('th-TH', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : 'N/A';
+                row.insertCell().textContent = sanitizeHTML(timestamp);
+                row.cells[0].className = 'px-4 py-3 text-xs text-gray-600';
+
+                row.insertCell().textContent = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
+                row.cells[1].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
+                row.cells[1].title = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
+
+                row.insertCell().textContent = sanitizeHTML(order['ชื่อสินค้า'] || 'N/A');
+                row.cells[2].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
+                row.cells[2].title = sanitizeHTML(order['ชื่อสินค้า'] || 'N/A');
+
+                row.insertCell().textContent = sanitizeHTML(order['จำนวนที่สั่ง'] || '0');
+                row.cells[3].className = 'px-4 py-3 text-sm text-gray-700 text-center';
+
+                row.insertCell().textContent = formatPrice(order['รวมราคา'] || 0);
+                row.cells[4].className = 'px-4 py-3 text-sm text-gray-800 font-semibold';
+            });
+        }
+
+        // --- Order Placement Logic ---
+        placeOrderBtn.addEventListener('click', () => {
+            const orderer = ordererNameInput.value.trim();
+            if (!orderer) {
+                showNotification('กรุณากรอกชื่อผู้สั่งด้วยค่ะ 😊', 'error');
+                ordererNameInput.focus();
+                return;
+            }
+
+            const itemsToOrder = [];
+            let grandTotal = 0;
+            const quantitySelects = productsTableBody.querySelectorAll('select');
+
+            quantitySelects.forEach(select => {
+                const quantity = parseInt(select.value);
+                if (quantity > 0) {
+                    const productName = select.dataset.productName;
+                    const productPrice = parseFloat(select.dataset.productPrice);
+                    const itemTotalPrice = quantity * productPrice;
+                    itemsToOrder.push({
+                        productName: productName,
+                        price: productPrice,
+                        quantity: quantity,
+                        itemTotalPrice: itemTotalPrice
+                    });
+                    grandTotal += itemTotalPrice;
+                }
+            });
+
+            if (itemsToOrder.length === 0) {
+                showNotification('กรุณาเลือกสินค้าอย่างน้อย 1 รายการค่ะ 🧺', 'error');
+                return;
+            }
+
+            modalOrdererName.textContent = sanitizeHTML(orderer);
+            modalOrderSummary.innerHTML = ''; 
+            itemsToOrder.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'py-2 border-b border-gray-200 last:border-b-0 text-sm';
+                itemDiv.innerHTML = `<strong>${sanitizeHTML(item.productName)}:</strong> ${item.quantity} x ${formatPrice(item.price)} = <span class="font-semibold">${formatPrice(item.itemTotalPrice)}</span> บาท`;
+                modalOrderSummary.appendChild(itemDiv);
+            });
+            modalGrandTotal.textContent = formatPrice(grandTotal);
+            
+            modalError.classList.add('hidden'); 
+            confirmOrderLoader.classList.add('hidden');
+            confirmOrderBtn.disabled = false;
+            editOrderBtn.disabled = false;
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+            modal.querySelector('div > div').classList.remove('scale-95'); 
+            modal.querySelector('div > div').classList.add('scale-100');
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div > div').classList.add('scale-95');
+            modal.querySelector('div > div').classList.add('scale-100'); // Fixed: Should remove scale-100, add scale-95
+        });
+
+        editOrderBtn.addEventListener('click', () => {
+            closeModalBtn.click(); 
+        });
+
+        confirmOrderBtn.addEventListener('click', async () => {
+            const orderer = ordererNameInput.value.trim();
+            const itemsToOrder = [];
+            
+            productsTableBody.querySelectorAll('select').forEach(select => {
+                const quantity = parseInt(select.value);
+                if (quantity > 0) {
+                    itemsToOrder.push({
+                        productName: select.dataset.productName,
+                        quantity: quantity,
+                        itemTotalPrice: parseFloat(select.dataset.productPrice) * quantity
+                    });
+                }
+            });
+            
+            if (itemsToOrder.length === 0) { 
+                modalError.textContent = 'ไม่มีสินค้าในรายการสั่งซื้อ';
+                modalError.classList.remove('hidden');
+                return;
+            }
+            
+            const payload = {
+                ordererName: orderer,
+                items: itemsToOrder
+            };
+
+            confirmOrderLoader.classList.remove('hidden');
+            confirmOrderBtn.disabled = true;
+            editOrderBtn.disabled = true;
+            modalError.classList.add('hidden');
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: {
+                        'Content-Type': 'text/plain', 
+                    },
+                });
+                
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    const textResponse = await response.text();
+                    console.error("Failed to parse server response as JSON. Raw response:", textResponse);
+                    throw new Error(`Failed to parse server response. Status: ${response.status}. Response: ${textResponse.substring(0,100)}...`);
+                }
+
+                if (!response.ok || !result.success) {
+                    console.error("GAS confirmOrder failed. Response from GAS:", result);
+                    throw new Error(result.message || `เกิดข้อผิดพลาดในการสั่งซื้อ (HTTP ${response.status})`);
+                }
+
+                showNotification('🎉 สั่งซื้อสินค้าเรียบร้อยแล้วค่ะ! ขอบคุณที่ใช้บริการค่ะ 🙏', 'success');
+                closeModalBtn.click();
+                ordererNameInput.value = ''; 
+                productsTableBody.querySelectorAll('select').forEach(select => {
+                    select.value = '0';
+                    select.dispatchEvent(new Event('change')); 
+                });
+                fetchOrders(); 
+
+            } catch (error) {
+                console.error('Error confirming order:', error);
+                modalError.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
+                modalError.classList.remove('hidden');
+                // Also show notification for broader visibility
+                showNotification(`เกิดข้อผิดพลาดในการยืนยันคำสั่งซื้อ: ${error.message}`, 'error', 6000);
+            } finally {
+                confirmOrderLoader.classList.add('hidden');
+                confirmOrderBtn.disabled = false;
+                editOrderBtn.disabled = false;
+            }
+        });
+        
+        refreshOrdersBtn.addEventListener('click', fetchOrders);
+
+        // --- Initial Load ---
+        // Fetches products and orders when the page loads.
+        fetchProducts();
+        fetchOrders();
+
+    </script>
+</body>
+</html>
