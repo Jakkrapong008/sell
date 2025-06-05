@@ -46,11 +46,20 @@
         }
         .slide-in-up { animation: slideInUp 0.5s ease-out forwards; }
 
-        /* No custom scrollbar CSS needed if removing overflow properties */
-        /* .product-list::-webkit-scrollbar { ... } */ 
-        /* .product-list::-webkit-scrollbar-track { ... } */
-        /* .product-list::-webkit-scrollbar-thumb { ... } */
-        /* .product-list::-webkit-scrollbar-thumb:hover { ... } */
+        /* Custom scrollbar for product list if it overflows - RE-ADDED */
+        .product-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .product-list::-webkit-scrollbar-track {
+            background: #f0fdf4; /* Light green pastel */
+        }
+        .product-list::-webkit-scrollbar-thumb {
+            background: #a7f3d0; /* Mint */
+            border-radius: 4px;
+        }
+        .product-list::-webkit-scrollbar-thumb:hover {
+            background: #6ee7b7; /* Brighter Mint */
+        }
 
         .table-cell-ellipsis {
             max-width: 100px; /* Adjust as needed for product name */
@@ -104,8 +113,8 @@
                 <h2 class="text-2xl font-semibold text-green-600 mb-4">🛒 เลือกสินค้าที่ต้องการ</h2>
                 <div id="productsLoader" class="loader"></div>
                 <div id="productsError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
-                <!-- Removed overflow-x-auto and max-h-[60vh] from this div -->
-                <div class="product-list"> 
+                <!-- RE-ADDED overflow-x-auto and max-h-[60vh] to this div for scrollbars -->
+                <div class="overflow-x-auto product-list max-h-[60vh]"> 
                     <table id="productsTable" class="min-w-full divide-y divide-gray-200 hidden">
                         <thead class="pastel-primary">
                             <tr>
@@ -201,7 +210,7 @@
     <script>
         // Note: The GAS_URL needs to be updated with your deployed Google Apps Script URL.
         // For testing purposes, you can use a placeholder, but it will not fetch real data.
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxO-HudmmNyJ58RKhay9oddjboJtrWHSM39Hrj4RL_1fFbZVNowqwP7_c7teiLuiS_/exec'; // REPLACE THIS WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxO-HudmmNyJ58RKhay9oddjboJtrWHSM39Hrj4RL_1fFbZVNowqwP7_c77eiLuiS_/exec'; // REPLACE THIS WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT URL
         
         const productsTableBody = document.getElementById('productsTableBody');
         const ordersTableBody = document.getElementById('ordersTableBody');
@@ -480,7 +489,7 @@
 
             } catch (error) {
                 console.error('Error fetching orders:', error);
-                showError(ordersErrorEl, `เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ: ${error.message} �`, ordersTable);
+                showError(ordersErrorEl, `เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ: ${error.message} 😥`, ordersTable);
                 if(ordersSummary) ordersSummary.classList.add('hidden'); // Hide summary on error
             } finally {
                 hideLoader(ordersLoader);
@@ -693,4 +702,3 @@
     </script>
 </body>
 </html>
-�
