@@ -46,7 +46,7 @@
         }
         .slide-in-up { animation: slideInUp 0.5s ease-out forwards; }
 
-        /* Custom scrollbar for product list if it overflows - RE-ADDED */
+        /* Custom scrollbar for product list if it overflows */
         .product-list::-webkit-scrollbar {
             width: 8px;
         }
@@ -60,7 +60,6 @@
         .product-list::-webkit-scrollbar-thumb:hover {
             background: #6ee7b7; /* Brighter Mint */
         }
-
         .table-cell-ellipsis {
             max-width: 100px; /* Adjust as needed for product name */
             white-space: nowrap;
@@ -113,8 +112,7 @@
                 <h2 class="text-2xl font-semibold text-green-600 mb-4">🛒 เลือกสินค้าที่ต้องการ</h2>
                 <div id="productsLoader" class="loader"></div>
                 <div id="productsError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
-                <!-- RE-ADDED overflow-x-auto and max-h-[60vh] to this div for scrollbars -->
-                <div class="overflow-x-auto product-list max-h-[60vh]"> 
+                <div class="overflow-x-auto product-list max-h-[60vh]">
                     <table id="productsTable" class="min-w-full divide-y divide-gray-200 hidden">
                         <thead class="pastel-primary">
                             <tr>
@@ -142,12 +140,11 @@
                 <h2 class="text-2xl font-semibold text-amber-600 mb-4">📋 คำสั่งซื้อที่สั่งเข้ามา</h2>
                 <div id="ordersLoader" class="loader"></div>
                 <div id="ordersError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
-                <!-- Removed overflow-x-auto and max-h-[50vh] from this div -->
-                <div class="product-list"> 
+                <div class="overflow-x-auto product-list max-h-[50vh]">
                     <table id="ordersTable" class="min-w-full divide-y divide-gray-200 hidden">
                         <thead class="pastel-secondary">
                             <tr>
-                                <!-- Removed Timestamp column -->
+                                <!-- Timestamp column removed -->
                                 <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อผู้สั่ง 🧑‍🌾</th>
                                 <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อสินค้า 📜</th>
                                 <th class="px-4 py-3 text-center text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">จำนวน 🔢</th>
@@ -159,7 +156,7 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- Order Summary Section -->
+                <!-- Order Summary Section Added -->
                 <div id="ordersSummary" class="mt-6 p-4 bg-yellow-50 rounded-lg shadow-inner hidden">
                     <h3 class="text-xl font-semibold text-amber-700 mb-3">สรุปยอดรวมตามผู้สั่ง 📊</h3>
                     <div id="summaryContent" class="space-y-2">
@@ -210,7 +207,7 @@
     <script>
         // Note: The GAS_URL needs to be updated with your deployed Google Apps Script URL.
         // For testing purposes, you can use a placeholder, but it will not fetch real data.
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxO-HudmmNyJ58RKhay9oddjboJtrWHSM39Hrj4RL_1fFbZVNowqwP7_c77eiLuiS_/exec'; // REPLACE THIS WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxO-HudmmNyJ58RKhay9oddjboJtrWHSM39Hrj4RL_1fFbZVNowqwP7_c7teiLuiS_/exec'; // REPLACE THIS WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT URL
         
         const productsTableBody = document.getElementById('productsTableBody');
         const ordersTableBody = document.getElementById('ordersTableBody');
@@ -413,15 +410,18 @@
             products.forEach((product, index) => {
                 const name = product['ชื่อสินค้า'] || 'N/A';
                 const price = parseFloat(product['ราคา']);
+                // This is where the 'imageUrl' from GAS is used.
+                // The GAS script should provide a direct link to the image file (e.g., from Google Drive).
                 const imageUrl = product['imageUrl'] || `https://placehold.co/100x100/a7f3d0/333333?text=${encodeURIComponent('ไม่มีรูป')}`;
                 const unit = product['หน่วย'] || 'ชุด';
 
-                if (isNaN(price) || price < 0) { 
+                if (isNaN(price) || price < 0) { // Allow 0 price if intended
                     console.warn('Invalid or zero price for product:', product);
                 }
 
                 const row = productsTableBody.insertRow();
                 row.classList.add('hover:bg-green-50', 'transition-colors', 'duration-150');
+                // The <img> tag displays the image from the imageUrl
                 row.insertCell().innerHTML = `<img src="${sanitizeHTML(imageUrl)}" alt="${sanitizeHTML(name)}" class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg shadow-sm m-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/fecaca/991b1b?text=${encodeURIComponent('รูปเสีย')}';">`;
                 
                 const nameCell = row.insertCell();
@@ -454,10 +454,6 @@
             });
         }
 
-        /**
-         * Updates the total price for a single item in the product table.
-         * @param {Event} event - The change event from the quantity select element.
-         */
         function updateTotalItemPrice(event) {
             const selectElement = event.target;
             const quantity = parseInt(selectElement.value);
@@ -506,7 +502,8 @@
             ordersSummary.classList.add('hidden'); // Hide summary until data is available
 
             if (!orders || orders.length === 0) {
-                ordersTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">📝 ยังไม่มีคำสั่งซื้อเข้ามา</td></tr>'; // colspan reduced by 1
+                // Changed colspan to 4 as Timestamp column is removed
+                ordersTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">📝 ยังไม่มีคำสั่งซื้อเข้ามา</td></tr>'; 
                 return;
             }
 
@@ -516,7 +513,7 @@
                 const row = ordersTableBody.insertRow();
                 row.classList.add('hover:bg-yellow-50', 'transition-colors', 'duration-150');
                 
-                // No Timestamp column
+                // Timestamp column removed - do not add cell for timestamp
                 row.insertCell().textContent = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
                 row.cells[0].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
                 row.cells[0].title = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
@@ -608,7 +605,7 @@
             modal.classList.add('opacity-0', 'pointer-events-none');
             modal.classList.remove('opacity-100');
             modal.querySelector('div > div').classList.add('scale-95');
-            // Fixed: This line was causing an issue. When closing, we want it to scale down.
+            // This line was causing an issue in previous versions, ensure it's removed if it was present
             // modal.querySelector('div > div').classList.add('scale-100'); 
         });
 
