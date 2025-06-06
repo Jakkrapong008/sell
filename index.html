@@ -101,12 +101,6 @@
         </header>
 
         <main>
-            <!-- Orderer Name Input -->
-            <section id="orderer-section" class="mb-6 p-6 bg-white rounded-xl shadow-lg fade-in" style="animation-delay: 0.2s;">
-                <label for="ordererName" class="block text-lg font-semibold text-gray-700 mb-2">ชื่อผู้สั่ง 🧑‍🌾:</label>
-                <input type="text" id="ordererName" name="ordererName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-150" placeholder="เช่น สมชาย ใจดี">
-            </section>
-
             <!-- Products Table -->
             <section id="products-section" class="mb-8 p-6 bg-white rounded-xl shadow-lg fade-in" style="animation-delay: 0.4s;">
                 <h2 class="text-2xl font-semibold text-green-600 mb-4">🛒 เลือกสินค้าที่ต้องการ</h2>
@@ -129,6 +123,11 @@
                     </table>
                 </div>
                 <div class="mt-6 text-right">
+                    <!-- Orderer Name Input - MOVED HERE -->
+                    <div id="orderer-section" class="mb-6 p-0 bg-white rounded-xl fade-in" style="animation-delay: 0.2s;">
+                        <label for="ordererName" class="block text-lg font-semibold text-gray-700 mb-2 text-left">ชื่อผู้สั่ง 🧑‍🌾:</label>
+                        <input type="text" id="ordererName" name="ordererName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-150" placeholder="เช่น สมชาย ใจดี">
+                    </div>
                     <button id="placeOrderBtn" class="btn-primary font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition duration-300">
                         ดำเนินการสั่งซื้อ <span class="ml-1">➡️</span>
                     </button>
@@ -262,19 +261,16 @@
             notificationModal.classList.remove('bg-blue-600', 'bg-green-600', 'bg-red-600', 'hidden', 'opacity-0', 'pointer-events-none');
             notificationModal.style.transform = 'translateX(100%)'; // Reset for animation
 
-            if (type === 'success') {
-                notificationModal.classList.add('bg-green-600');
-            } else if (type === 'error') {
-                notificationModal.classList.add('bg-red-600');
-            } else { // info
-                notificationModal.classList.add('bg-blue-600');
-            }
-
-            notificationModal.classList.remove('hidden');
-            // Force reflow for animation
-            void notificationModal.offsetWidth; 
-
             requestAnimationFrame(() => {
+                if (type === 'success') {
+                    notificationModal.classList.add('bg-green-600');
+                } else if (type === 'error') {
+                    notificationModal.classList.add('bg-red-600');
+                } else { // info
+                    notificationModal.classList.add('bg-blue-600');
+                }
+
+                notificationModal.classList.remove('hidden');
                 notificationModal.classList.add('opacity-100');
                 notificationModal.style.transform = 'translateX(0)';
                 notificationModal.classList.remove('pointer-events-none');
@@ -605,8 +601,6 @@
             modal.classList.add('opacity-0', 'pointer-events-none');
             modal.classList.remove('opacity-100');
             modal.querySelector('div > div').classList.add('scale-95');
-            // This line was causing an issue in previous versions, ensure it's removed if it was present
-            // modal.querySelector('div > div').classList.add('scale-100'); 
         });
 
         editOrderBtn.addEventListener('click', () => {
