@@ -123,7 +123,7 @@
                     </table>
                 </div>
                 <div class="mt-6 text-right">
-                    <!-- Orderer Name Input - MOVED HERE -->
+                    <!-- Orderer Name Input -->
                     <div id="orderer-section" class="mb-6 p-0 bg-white rounded-xl fade-in" style="animation-delay: 0.2s;">
                         <label for="ordererName" class="block text-lg font-semibold text-gray-700 mb-2 text-left">ชื่อผู้สั่ง 🧑‍🌾:</label>
                         <input type="text" id="ordererName" name="ordererName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-150" placeholder="เช่น สมชาย ใจดี">
@@ -134,32 +134,33 @@
                 </div>
             </section>
 
-            <!-- Order History -->
+            <!-- Order History (Summaries Only) -->
             <section id="order-history-section" class="p-6 bg-white rounded-xl shadow-lg fade-in" style="animation-delay: 0.6s;">
-                <h2 class="text-2xl font-semibold text-amber-600 mb-4">📋 คำสั่งซื้อที่สั่งเข้ามา</h2>
+                <h2 class="text-2xl font-semibold text-amber-600 mb-4">📋 สรุปคำสั่งซื้อ</h2>
                 <div id="ordersLoader" class="loader"></div>
                 <div id="ordersError" class="hidden text-red-500 text-center p-3 bg-red-100 rounded-lg"></div>
-                <div class="overflow-x-auto product-list max-h-[50vh]">
-                    <table id="ordersTable" class="min-w-full divide-y divide-gray-200 hidden">
-                        <thead class="pastel-secondary">
-                            <tr>
-                                <!-- Timestamp column removed -->
-                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อผู้สั่ง 🧑‍🌾</th>
-                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">ชื่อสินค้า 📜</th>
-                                <th class="px-4 py-3 text-center text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">จำนวน 🔢</th>
-                                <th class="px-4 py-3 text-left text-xs sm:text-sm font-medium text-amber-700 uppercase tracking-wider">รวมราคา 💸</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ordersTableBody" class="bg-white divide-y divide-gray-200">
-                            <!-- Order history rows will be inserted here -->
-                        </tbody>
-                    </table>
-                </div>
-                <!-- Order Summary Section Added -->
+                
+                <!-- Order Summary Section -->
                 <div id="ordersSummary" class="mt-6 p-4 bg-yellow-50 rounded-lg shadow-inner hidden">
                     <h3 class="text-xl font-semibold text-amber-700 mb-3">สรุปยอดรวมตามผู้สั่ง 📊</h3>
-                    <div id="summaryContent" class="space-y-2">
+                    <div id="summaryContent" class="space-y-2 mb-6">
                         <!-- Summary items will be inserted here by JavaScript -->
+                    </div>
+
+                    <!-- Product Type Summary Section -->
+                    <h3 class="text-xl font-semibold text-green-700 mb-3 border-t pt-4 border-gray-200">สรุปยอดรวมตามชนิดสินค้า 🍎</h3>
+                    <div id="productTypeSummary" class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-green-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs sm:text-sm font-medium text-green-800 uppercase tracking-wider">ชื่อสินค้า 📜</th>
+                                    <th class="px-4 py-2 text-right text-xs sm:text-sm font-medium text-green-800 uppercase tracking-wider">จำนวนรวมที่สั่งซื้อ 🔢</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTypeSummaryTableBody" class="bg-white divide-y divide-gray-100">
+                                <!-- Product type summary rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="mt-4 text-center">
@@ -209,19 +210,24 @@
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxO-HudmmNyJ58RKhay9oddjboJtrWHSM39Hrj4RL_1fFbZVNowqwP7_c7teiLuiS_/exec'; // REPLACE THIS WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT URL
         
         const productsTableBody = document.getElementById('productsTableBody');
-        const ordersTableBody = document.getElementById('ordersTableBody');
+        // Removed elements related to individual order history table, as requested
+        // const ordersTableBody = document.getElementById('ordersTableBody'); 
         const productsLoader = document.getElementById('productsLoader');
-        const ordersLoader = document.getElementById('ordersLoader');
+        const ordersLoader = document.getElementById('ordersLoader'); // Kept for summary section loader
         const productsErrorEl = document.getElementById('productsError'); 
-        const ordersErrorEl = document.getElementById('ordersError');   
+        const ordersErrorEl = document.getElementById('ordersError');   // Kept for summary section error
         const productsTable = document.getElementById('productsTable');
-        const ordersTable = document.getElementById('ordersTable');
-        const ordersSummary = document.getElementById('ordersSummary'); // New element for summary
-        const summaryContent = document.getElementById('summaryContent'); // New element for summary content
+        // const ordersTable = document.getElementById('ordersTable'); // Removed
+        const ordersSummary = document.getElementById('ordersSummary'); // Element for orderer and product type summaries
+        const summaryContent = document.getElementById('summaryContent'); // Element for orderer summary content
+
+        // Elements for product type summary
+        const productTypeSummaryElement = document.getElementById('productTypeSummary');
+        const productTypeSummaryTableBody = document.getElementById('productTypeSummaryTableBody');
 
         const ordererNameInput = document.getElementById('ordererName');
         const placeOrderBtn = document.getElementById('placeOrderBtn');
-        const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
+        const refreshOrdersBtn = document.getElementById('refreshOrdersBtn'); // Kept for refreshing summaries
 
         const modal = document.getElementById('orderSummaryModal');
         const closeModalBtn = document.getElementById('closeModalBtn');
@@ -307,7 +313,8 @@
          */
         function showLoader(loaderElement, tableElement, errorElement) {
             if(loaderElement) loaderElement.style.display = 'block';
-            if(tableElement) tableElement.classList.add('hidden');
+            // tableElement is now optional as it might not exist for ordersTable
+            if(tableElement) tableElement.classList.add('hidden'); 
             if(errorElement) errorElement.classList.add('hidden');
         }
 
@@ -320,17 +327,18 @@
         }
         
         /**
-         * Displays an error message and hides the related table.
+         * Displays an error message and hides the related table/summary.
          * @param {HTMLElement} errorElement - The error element to show.
          * @param {string} message - The error message.
-         * @param {HTMLElement} tableElement - The table element to hide.
+         * @param {HTMLElement} tableOrSummaryElement - The element (table or summary div) to hide.
          */
-        function showError(errorElement, message, tableElement) {
+        function showError(errorElement, message, tableOrSummaryElement) {
             if(errorElement) {
                 errorElement.textContent = message;
                 errorElement.classList.remove('hidden');
             }
-            if(tableElement) tableElement.classList.add('hidden');
+            // tableOrSummaryElement is now optional
+            if(tableOrSummaryElement) tableOrSummaryElement.classList.add('hidden');
         }
 
         /**
@@ -458,12 +466,12 @@
             totalCell.textContent = formatPrice(quantity * price);
         }
 
-        // --- Fetch Order History ---
+        // --- Fetch Order History (for summaries) ---
         /**
-         * Fetches order history from Google Apps Script.
+         * Fetches order history from Google Apps Script to generate summaries.
          */
         async function fetchOrders() {
-            showLoader(ordersLoader, ordersTable, ordersErrorEl);
+            showLoader(ordersLoader, null, ordersErrorEl); // ordersTable is null as it's removed
             try {
                 const response = await fetch(`${GAS_URL}?action=getOrders`);
                 if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText} (Status: ${response.status})`);
@@ -474,71 +482,90 @@
                     throw new Error(result.message || 'Failed to fetch orders from GAS (Original message from GAS was empty or not provided).');
                 }
                 
-                renderOrders(result.data);
+                renderSummaries(result.data); // Call a new function to render only summaries
                 hideError(ordersErrorEl);
-                if(ordersTable) ordersTable.classList.remove('hidden');
-                if(ordersSummary) ordersSummary.classList.remove('hidden'); // Show summary section
+                // No ordersTable to show/hide here. ordersSummary handles its own visibility.
 
             } catch (error) {
-                console.error('Error fetching orders:', error);
-                showError(ordersErrorEl, `เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ: ${error.message} 😥`, ordersTable);
-                if(ordersSummary) ordersSummary.classList.add('hidden'); // Hide summary on error
+                console.error('Error fetching orders for summaries:', error);
+                showError(ordersErrorEl, `เกิดข้อผิดพลาดในการโหลดสรุปคำสั่งซื้อ: ${error.message} 😥`, ordersSummary); // Pass ordersSummary to hide
             } finally {
                 hideLoader(ordersLoader);
             }
         }
 
         /**
-         * Renders order history into the orders table and calculates summary.
+         * Renders only the orderer and product type summaries.
          * @param {Array<Object>} orders - Array of order objects.
          */
-        function renderOrders(orders) {
-            ordersTableBody.innerHTML = ''; // Clear existing rows
-            summaryContent.innerHTML = ''; // Clear existing summary content
+        function renderSummaries(orders) {
+            summaryContent.innerHTML = ''; // Clear existing orderer summary content
+            productTypeSummaryTableBody.innerHTML = ''; // Clear existing product type summary content
             ordersSummary.classList.add('hidden'); // Hide summary until data is available
 
             if (!orders || orders.length === 0) {
-                // Changed colspan to 4 as Timestamp column is removed
-                ordersTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">📝 ยังไม่มีคำสั่งซื้อเข้ามา</td></tr>'; 
+                // If no orders, can show a message or just keep summaries hidden.
+                // For now, if no orders, just hide the summary section.
                 return;
             }
 
-            const ordererTotals = {}; // Object to store total amounts per orderer
+            // Object to store total amounts and ordered items per orderer
+            const ordererData = {}; 
+            const productTypeTotals = {}; // Object to store total quantities per product type
 
             orders.forEach(order => {
-                const row = ordersTableBody.insertRow();
-                row.classList.add('hover:bg-yellow-50', 'transition-colors', 'duration-150');
-                
-                // Timestamp column removed - do not add cell for timestamp
-                row.insertCell().textContent = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
-                row.cells[0].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
-                row.cells[0].title = sanitizeHTML(order['ชื่อผู้สั่ง'] || 'N/A');
-
-                row.insertCell().textContent = sanitizeHTML(order['ชื่อสินค้า'] || 'N/A');
-                row.cells[1].className = 'px-4 py-3 text-sm text-gray-700 table-cell-ellipsis';
-                row.cells[1].title = sanitizeHTML(order['ชื่อสินค้า'] || 'N/A');
-
-                row.insertCell().textContent = sanitizeHTML(order['จำนวนที่สั่ง'] || '0');
-                row.cells[2].className = 'px-4 py-3 text-sm text-gray-700 text-center';
-
-                const currentOrderPrice = parseFloat(order['รวมราคา'] || 0);
-                row.insertCell().textContent = formatPrice(currentOrderPrice);
-                row.cells[3].className = 'px-4 py-3 text-sm text-gray-800 font-semibold';
-
-                // Aggregate totals for summary
                 const ordererName = order['ชื่อผู้สั่ง'] || 'Unknown';
-                ordererTotals[ordererName] = (ordererTotals[ordererName] || 0) + currentOrderPrice;
+                const productName = order['ชื่อสินค้า'] || 'Unknown Product';
+                const quantityOrdered = parseInt(order['จำนวนที่สั่ง'] || 0);
+                const currentOrderPrice = parseFloat(order['รวมราคา'] || 0);
+
+                // Aggregate data for orderer summary
+                if (!ordererData[ordererName]) {
+                    ordererData[ordererName] = {
+                        totalPrice: 0,
+                        items: []
+                    };
+                }
+                ordererData[ordererName].totalPrice += currentOrderPrice;
+                ordererData[ordererName].items.push(`${productName} (${quantityOrdered})`);
+
+                // Aggregate totals for product type summary
+                productTypeTotals[productName] = (productTypeTotals[productName] || 0) + quantityOrdered;
             });
 
-            // Render Summary
-            if (Object.keys(ordererTotals).length > 0) {
-                for (const name in ordererTotals) {
+            // Render Orderer Summary
+            if (Object.keys(ordererData).length > 0) {
+                for (const name in ordererData) {
+                    const data = ordererData[name];
+                    const itemsList = data.items.join(', '); // Join all ordered items for this person
                     const summaryItem = document.createElement('div');
-                    summaryItem.className = 'flex justify-between items-center text-base';
-                    summaryItem.innerHTML = `<span><strong>${sanitizeHTML(name)}</strong></span><span class="font-bold text-green-700">${formatPrice(ordererTotals[name])} บาท</span>`;
+                    summaryItem.className = 'flex flex-col sm:flex-row sm:justify-between sm:items-center text-base py-1 border-b border-gray-100 last:border-b-0';
+                    summaryItem.innerHTML = `
+                        <span class="font-bold text-gray-800">${sanitizeHTML(name)}</span>
+                        <span class="text-sm text-gray-600 sm:ml-4 flex-grow truncate" title="${sanitizeHTML(itemsList)}">(${sanitizeHTML(itemsList)})</span>
+                        <span class="font-bold text-green-700 whitespace-nowrap">${formatPrice(data.totalPrice)} บาท</span>
+                    `;
                     summaryContent.appendChild(summaryItem);
                 }
-                ordersSummary.classList.remove('hidden'); // Show the summary section
+            }
+
+            // Render Product Type Summary
+            if (Object.keys(productTypeTotals).length > 0) {
+                // Sort product names alphabetically for consistent display
+                const sortedProductNames = Object.keys(productTypeTotals).sort();
+                sortedProductNames.forEach(productName => {
+                    const row = productTypeSummaryTableBody.insertRow();
+                    row.className = 'bg-white border-b border-gray-200 hover:bg-gray-50';
+                    row.insertCell().textContent = sanitizeHTML(productName);
+                    row.cells[0].className = 'px-4 py-2 text-sm text-gray-700 font-medium';
+                    row.insertCell().textContent = sanitizeHTML(productTypeTotals[productName]);
+                    row.cells[1].className = 'px-4 py-2 text-sm text-gray-700 text-right';
+                });
+            }
+
+            // Show the main summary section if any data is present
+            if (Object.keys(ordererData).length > 0 || Object.keys(productTypeTotals).length > 0) {
+                ordersSummary.classList.remove('hidden'); 
             }
         }
 
@@ -668,7 +695,7 @@
                     select.value = '0';
                     select.dispatchEvent(new Event('change')); 
                 });
-                fetchOrders(); 
+                fetchOrders(); // Re-fetch summaries after a successful order
 
             } catch (error) {
                 console.error('Error confirming order:', error);
@@ -688,7 +715,7 @@
         // --- Initial Load ---
         // Fetches products and orders when the page loads.
         fetchProducts();
-        fetchOrders();
+        fetchOrders(); // Fetch summaries on initial load
 
     </script>
 </body>
