@@ -98,6 +98,7 @@
     <div class="container mx-auto max-w-4xl">
         <header class="text-center mb-8 slide-in-up">
             <h1 class="text-4xl sm:text-5xl font-bold text-green-700">🛍️ ระบบซื้ออาหาร ผักและผลไม้ 🥕🍓</h1>
+            <!-- Heart emoji button was here, moved to footer -->
         </header>
 
         <main>
@@ -126,13 +127,19 @@
                     <!-- Orderer Name Input -->
                     <div id="orderer-section" class="mb-6 p-0 bg-white rounded-xl fade-in" style="animation-delay: 0.2s;">
                         <label for="ordererName" class="block text-lg font-semibold text-gray-700 mb-2 text-left">ชื่อผู้สั่ง 🧑‍🌾:</label>
-                        <input type="text" id="ordererName" name="ordererName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-150" placeholder="เช่น ครูเหมียว">
+                        <input type="text" id="ordererName" name="ordererName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-150" placeholder="เช่น สมชาย ใจดี">
                     </div>
                     <button id="placeOrderBtn" class="btn-primary font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition duration-300">
                         ดำเนินการสั่งซื้อ <span class="ml-1">➡️</span>
                     </button>
                 </div>
             </section>
+
+            <!-- NEW: Message when products section is hidden -->
+            <div id="closedOrderingMessage" class="hidden text-center my-8 p-8 bg-red-100 border-2 border-red-400 rounded-xl shadow-lg">
+                <p class="text-3xl sm:text-4xl font-bold text-red-700">❌ ปิดการสั่งซื้อ ❌</p>
+                <!-- Removed the specific text here -->
+            </div>
 
             <!-- Order History (Summaries Only) -->
             <section id="order-history-section" class="p-6 bg-white rounded-xl shadow-lg fade-in" style="animation-delay: 0.6s;">
@@ -163,9 +170,6 @@
                         </table>
                     </div>
                 </div>
-                <div class="mt-4 text-center">
-                    <button id="refreshOrdersBtn" class="text-sm text-blue-600 hover:text-blue-800 underline">รีเฟรชรายการคำสั่งซื้อ 🔄</button>
-                </div>
             </section>
         </main>
 
@@ -189,6 +193,21 @@
                 <div id="confirmOrderLoader" class="loader hidden mt-4"></div>
             </div>
         </div>
+
+        <!-- Control Modal for Products Section -->
+        <div id="controlModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 opacity-0 pointer-events-none">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 sm:p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-700">⚙️ ควบคุมการแสดงผล</h3>
+                    <button id="closeControlModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <div class="flex items-center justify-between mb-4">
+                    <label for="toggleProductsCheckbox" class="text-lg text-gray-800 cursor-pointer">แสดงส่วนเลือกสินค้า</label>
+                    <input type="checkbox" id="toggleProductsCheckbox" class="h-6 w-6 text-green-600 rounded focus:ring-green-500 transition duration-150 ease-in-out">
+                </div>
+                <p class="text-sm text-gray-500 mt-2">ใช้เพื่อซ่อนหรือแสดงส่วน "เลือกสินค้าที่ต้องการ" พร้อมปุ่ม "ดำเนินการสั่งซื้อ"</p>
+            </div>
+        </div>
         
         <!-- Simple Notification Modal -->
         <div id="notificationModal" class="fixed top-4 right-4 z-[100] p-4 rounded-lg shadow-lg text-white opacity-0 pointer-events-none transition-all duration-500 max-w-xs sm:max-w-sm hidden" style="transform: translateX(100%);">
@@ -198,8 +217,12 @@
             </div>
         </div>
 
-        <footer class="text-center mt-12 py-4 text-sm text-gray-500 border-t border-gray-200">
+        <footer class="text-center mt-12 py-4 text-sm text-gray-500 border-t border-gray-200 flex flex-col items-center">
             <p>&copy; <span id="currentYear"></span> ระบบร้านผักผลไม้สดใส. ขับเคลื่อนด้วยความสดใหม่! 💚</p>
+            <!-- Moved Heart emoji button to footer and reduced its size -->
+            <button id="toggleProductsSectionBtn" class="mt-2 text-xl sm:text-2xl cursor-pointer transform transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-pink-300 rounded-full p-1">
+                ❤️
+            </button>
         </footer>
 
     </div>
@@ -210,24 +233,21 @@
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbzxO-HudmmNyJ58RKhay9oddjboJtrWHSM39Hrj4RL_1fFbZVNowqwP7_c7teiLuiS_/exec'; // REPLACE THIS WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT URL
         
         const productsTableBody = document.getElementById('productsTableBody');
-        // Removed elements related to individual order history table, as requested
-        // const ordersTableBody = document.getElementById('ordersTableBody'); 
         const productsLoader = document.getElementById('productsLoader');
-        const ordersLoader = document.getElementById('ordersLoader'); // Kept for summary section loader
+        const ordersLoader = document.getElementById('ordersLoader'); 
         const productsErrorEl = document.getElementById('productsError'); 
-        const ordersErrorEl = document.getElementById('ordersError');   // Kept for summary section error
+        const ordersErrorEl = document.getElementById('ordersError');   
         const productsTable = document.getElementById('productsTable');
-        // const ordersTable = document.getElementById('ordersTable'); // Removed
-        const ordersSummary = document.getElementById('ordersSummary'); // Element for orderer and product type summaries
-        const summaryContent = document.getElementById('summaryContent'); // Element for orderer summary content
+        const ordersSummary = document.getElementById('ordersSummary');
+        const summaryContent = document.getElementById('summaryContent');
 
-        // Elements for product type summary
         const productTypeSummaryElement = document.getElementById('productTypeSummary');
         const productTypeSummaryTableBody = document.getElementById('productTypeSummaryTableBody');
 
         const ordererNameInput = document.getElementById('ordererName');
         const placeOrderBtn = document.getElementById('placeOrderBtn');
-        const refreshOrdersBtn = document.getElementById('refreshOrdersBtn'); // Kept for refreshing summaries
+        // Removed refreshOrdersBtn as requested
+        // const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
 
         const modal = document.getElementById('orderSummaryModal');
         const closeModalBtn = document.getElementById('closeModalBtn');
@@ -242,6 +262,20 @@
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
         let productsData = []; // To store fetched products
+
+        // Get the products section element
+        const productsSection = document.getElementById('products-section');
+        // Get the element to display when products section is hidden
+        const closedOrderingMessage = document.getElementById('closedOrderingMessage');
+
+        // Get the toggle button element
+        const toggleProductsSectionBtn = document.getElementById('toggleProductsSectionBtn');
+
+        // Control Modal elements
+        const controlModal = document.getElementById('controlModal');
+        const closeControlModalBtn = document.getElementById('closeControlModalBtn');
+        const toggleProductsCheckbox = document.getElementById('toggleProductsCheckbox');
+
 
         // --- Notification System ---
         const notificationModal = document.getElementById('notificationModal');
@@ -387,8 +421,9 @@
                     throw new Error(result.message || 'Failed to fetch products from GAS (Original message from GAS was empty or not provided).');
                 }
                 
-                productsData = result.data;
-                renderProducts(productsData);
+                // Filter products based on the 'see' column
+                const visibleProducts = result.data.filter(product => product['see'] === 'visible');
+                renderProducts(visibleProducts); // Render only visible products
                 hideError(productsErrorEl);
                 if (productsTable) productsTable.classList.remove('hidden');
 
@@ -537,12 +572,12 @@
             if (Object.keys(ordererData).length > 0) {
                 for (const name in ordererData) {
                     const data = ordererData[name];
-                    const itemsList = data.items.join(', '); // Join all ordered items for this person
+                    const itemsList = data.items.map(item => sanitizeHTML(item)).join(', '); // Sanitize each item and then join
                     const summaryItem = document.createElement('div');
                     summaryItem.className = 'flex flex-col sm:flex-row sm:justify-between sm:items-center text-base py-1 border-b border-gray-100 last:border-b-0';
                     summaryItem.innerHTML = `
                         <span class="font-bold text-gray-800">${sanitizeHTML(name)}</span>
-                        <span class="text-sm text-gray-600 sm:ml-4 flex-grow truncate" title="${sanitizeHTML(itemsList)}">(${sanitizeHTML(itemsList)})</span>
+                        <span class="text-sm text-gray-600 sm:ml-4 flex-grow truncate" title="${itemsList}">(${itemsList})</span>
                         <span class="font-bold text-green-700 whitespace-nowrap">${formatPrice(data.totalPrice)} บาท</span>
                     `;
                     summaryContent.appendChild(summaryItem);
@@ -710,12 +745,54 @@
             }
         });
         
-        refreshOrdersBtn.addEventListener('click', fetchOrders);
-
         // --- Initial Load ---
         // Fetches products and orders when the page loads.
         fetchProducts();
         fetchOrders(); // Fetch summaries on initial load
+
+        // --- Toggle Products Section Functionality ---
+        toggleProductsSectionBtn.addEventListener('click', () => {
+            // Open the control modal instead of directly toggling the section
+            controlModal.classList.remove('opacity-0', 'pointer-events-none');
+            controlModal.classList.add('opacity-100');
+            controlModal.querySelector('div > div').classList.remove('scale-95'); 
+            controlModal.querySelector('div > div').classList.add('scale-100');
+
+            // Set the checkbox state based on current visibility of productsSection
+            toggleProductsCheckbox.checked = !productsSection.classList.contains('hidden');
+        });
+
+        // Close Control Modal
+        closeControlModalBtn.addEventListener('click', () => {
+            controlModal.classList.add('opacity-0', 'pointer-events-none');
+            controlModal.classList.remove('opacity-100');
+            controlModal.querySelector('div > div').classList.add('scale-95');
+        });
+
+        // Toggle Products Section via Checkbox in Control Modal
+        toggleProductsCheckbox.addEventListener('change', () => {
+            if (toggleProductsCheckbox.checked) {
+                productsSection.classList.remove('hidden');
+                closedOrderingMessage.classList.add('hidden'); // Hide the message when products section is visible
+                toggleProductsSectionBtn.textContent = '❤️'; // Red heart when visible
+                showNotification('แสดงส่วนเลือกสินค้าแล้ว', 'info', 2000);
+            } else {
+                productsSection.classList.add('hidden');
+                closedOrderingMessage.classList.remove('hidden'); // Show the message when products section is hidden
+                toggleProductsSectionBtn.textContent = '🤍'; // White heart when hidden
+                showNotification('ซ่อนส่วนเลือกสินค้าแล้ว', 'info', 2000);
+            }
+        });
+
+        // Initialize the visibility of the message on page load based on productsSection state
+        // This ensures the correct message is shown on first load if products section is hidden by default.
+        if (productsSection.classList.contains('hidden')) {
+            closedOrderingMessage.classList.remove('hidden');
+            toggleProductsSectionBtn.textContent = '🤍';
+        } else {
+            closedOrderingMessage.classList.add('hidden');
+            toggleProductsSectionBtn.textContent = '❤️';
+        }
 
     </script>
 </body>
